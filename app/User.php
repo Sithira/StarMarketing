@@ -35,4 +35,14 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get commissions
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function commission()
+    {
+        return $this->hasMany(Commission::class);
+    }
 }

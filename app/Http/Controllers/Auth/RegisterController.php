@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Services\DistributeCommissionService;
 use App\User;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -30,6 +32,8 @@ class RegisterController extends Controller
      */
     protected $redirectTo = '/home';
 
+    private $parent = null;
+
     /**
      * Create a new controller instance.
      *
@@ -48,12 +52,24 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
+        $validator = Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'parent_id' => ['required'],
+            'parent' => ['required'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
+
+        if ($validator->after(function(\Illuminate\Validation\Validator $validator) use ($data)  {
+
+            $this->parent = User::where('id', $data['parent'])->first();
+
+            if (is_null($this->parent)) {
+                $validator->errors()->add('parent', 'Parent not found');
+            }
+
+        }))
+
+        return $validator;
     }
 
     /**
@@ -64,11 +80,24 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'parent_id' => $data['parent_id'],
-            'password' => Hash::make($data['password']),
-        ]);
+
+        $user = null;
+
+        if (!is_null($this->parent) && $this->parent instanceof User) {
+            $user = $this->parent->children()->create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'parent_id' => $data['parent'],
+                'password' => Hash::make($data['password']),
+            ]);
+        }
+
+        return $user;
+    }
+
+    protected function registered(Request $request, $user)
+    {
+        DistributeCommissionService::getInstance()
+            ->distribute($user);
     }
 }
