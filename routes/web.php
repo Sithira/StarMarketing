@@ -18,3 +18,6 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+
+Route::get('/commissions', 'HomeController@getCommissions')->name('commissions');
+Route::get('/tree', 'HomeController@getTree')->name('commissions');

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TreeBuilder;
+use App\User;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -24,5 +26,19 @@ class HomeController extends Controller
     public function index()
     {
         return view('home');
+    }
+
+    public function getCommissions()
+    {
+        $commissions = auth()->user()->commissions;
+
+        return view('commissions', compact('commissions'));
+    }
+
+    public function getTree()
+    {
+        $tree = TreeBuilder::render(User::descendantsAndSelf(auth()->id())->toTree());
+
+        return view('tree', compact('tree'));
     }
 }
